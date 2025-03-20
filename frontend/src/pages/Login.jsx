@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { api_base_url } from '../helper';
 import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
+import BackgroundBeamsWithCollision from "../components/ui/background-beams-with-collision";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -42,6 +43,12 @@ const Login = () => {
       >
         {darkMode ? "Light Mode" : "Dark Mode"}
       </button>
+
+      {/* Animated Background - Behind Everything */}
+      <div className="absolute inset-0 -z-10">
+        <BackgroundBeamsWithCollision />
+      </div>
+
       <CardContainer>
         <CardBody>
           <form 

@@ -5,7 +5,7 @@ import { api_base_url } from "../helper";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { BackgroundBeamsWithCollision } from "../components/ui/background-beams-with-collision";
+import BackgroundBeamsWithCollision from "../components/ui/background-beams-with-collision";
 
 const Home = () => {
   const [isCreateModelShow, setIsCreateModelShow] = useState(false);
