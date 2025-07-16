@@ -409,18 +409,26 @@ const Editor = () => {
             </button>
           </div>
           <Editor2
-            onChange={(newCode) => setCode(newCode || '')} // Update state
+            onChange={(newCode) => setCode(newCode || '')}
             theme="vs-dark"
             height="calc(100% - 40px)"
             width="100%"
-            language={data?.projLanguage || 'python'} // Use correct language
-            value={code} // Bind editor to state
+            language={data?.projLanguage || 'python'}
+            value={code}
             options={{
               minimap: { enabled: true },
               scrollBeyondLastLine: false,
               fontSize: 14,
               lineNumbers: 'on',
               automaticLayout: true,
+              formatOnPaste: true,
+              formatOnType: true,
+              tabSize: 4,
+              insertSpaces: true,
+              detectIndentation: true,
+              wordWrap: 'on',
+              autoIndent: 'full',
+              renderLineHighlight: 'all',
             }}
           />
         </div>
