@@ -13,6 +13,7 @@
     "@heroicons/react": "^2.2.0",
     "@material-tailwind/react": "^2.1.10",
     "@monaco-editor/react": "^4.6.0",
+    "caniuse-lite": "^1.0.30001727",
     "framer-motion": "^12.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

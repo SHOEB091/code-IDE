@@ -25,7 +25,7 @@ const RouteHandler = () => {
         <Route path="/" element={isLoggedIn ? <Home /> : <Navigate to={"/login"}/>} />
         <Route path="/signUp" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/editior/:id" element={isLoggedIn ? <Editor /> : <Navigate to={"/login"}/>} />
+        <Route path="/editor/:id" element={isLoggedIn ? <Editor /> : <Navigate to={"/login"}/>} />
         <Route path="*" element={<NoPage />} />
       </Routes>
     </>

@@ -1,20 +1,22 @@
-import React, { useEffect, useState, version } from 'react';
+import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
-import Select from 'react-select';
-import { api_base_url } from '../helper';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import Select from "react-select";
+import { api_base_url } from "../helper";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { motion } from "framer-motion";
+import BackgroundBeamsWithCollision from "../components/ui/background-beams-with-collision";
 
 const Home = () => {
   const [isCreateModelShow, setIsCreateModelShow] = useState(false);
-  const [languageOptions, setLanguageOptions] = useState([]);
-  const [selectedLanguage, setSelectedLanguage] = useState(null); // State to store selected language
-
   const [isEditModelShow, setIsEditModelShow] = useState(false);
-
-  const navigate = useNavigate();
-
+  const [languageOptions, setLanguageOptions] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
   const [name, setName] = useState("");
+  const [projects, setProjects] = useState(null);
+  const [editProjId, setEditProjId] = useState("");
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
+  const navigate = useNavigate();
 
   const customStyles = {
     control: (provided) => ({
@@ -46,252 +48,327 @@ const Home = () => {
     }),
   };
 
-  const getRunTimes = async () => {
-    let res = await fetch("https://emkc.org/api/v2/piston/runtimes");
-    let data = await res.json();
-
-    // Filter only the required languages
-    const filteredLanguages = [
-      "python",
-      "javascript",
-      "c",
-      "c++",
-      "java",
-      "bash"
-    ];
-
-    const options = data
-      .filter(runtime => filteredLanguages.includes(runtime.language))
-      .map(runtime => ({
-        label: `${runtime.language} (${runtime.version})`,
-        value: runtime.language === "c++" ? "cpp" : runtime.language,
-        version: runtime.version,
-      }));
-
-    setLanguageOptions(options);
-  };
-
-  const handleLanguageChange = (selectedOption) => {
-    setSelectedLanguage(selectedOption); // Update selected language state
-    console.log("Selected language:", selectedOption);
-  };
-
-  const [projects, setProjects] = useState(null);
-
-  const getProjects = async () => {
-    fetch(api_base_url + "/getProjects", {
-      mode: "cors",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        token: localStorage.getItem("token")
-      })
-    }).then(res => res.json()).then(data => {
-      console.log(data)
-      if (data.success) {
-        setProjects(data.projects);
-      }
-      else {
-        toast.error(data.msg);
-      }
-    });
-  };
-
   useEffect(() => {
     getProjects();
     getRunTimes();
   }, []);
 
-  const createProj = () => {
-    fetch(api_base_url + "/createProj", {
-      mode: "cors",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: name,
-        projLanguage: selectedLanguage.value,
-        token: localStorage.getItem("token"),
-        version: selectedLanguage.version
-      })
-    }).then(res => res.json()).then(data => {
-      if (data.success) {
-        setName("");
-        navigate("/editior/" + data.projectId)
-      }
-      else {
-        toast.error(data.msg);
-      }
-    })
-  };
-
-  const deleteProject = (id) => {
-    let conf = confirm("Are you sure you want to delete this project?");
-    if (conf) {
-      fetch(api_base_url + "/deleteProject", {
-        mode: "cors",
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          projectId: id,
-          token: localStorage.getItem("token")
-        })
-      }).then(res => res.json()).then(data => {
-        if (data.success) {
-          getProjects();
+  const getRunTimes = async () => {
+    try {
+      // Define known working versions for each language
+      const knownWorkingVersions = {
+        'javascript': '18.15.0',  // Node.js version
+        'python': '3.10.0',
+        'c++': '10.2.0',
+        'c': '10.2.0',
+        'java': '15.0.2',
+        'bash': '5.2.0',
+      };
+      
+      // Fetch all available runtimes
+      let res = await fetch("https://emkc.org/api/v2/piston/runtimes");
+      let data = await res.json();
+      console.log("Available runtimes:", data);
+      
+      // Filter languages we support
+      const filteredLanguages = ["python", "javascript", "c", "c++", "java", "bash"];
+      
+      // Map aliases to their proper language names for filtering
+      const aliasToLanguage = {
+        'node-js': 'javascript',
+        'node-javascript': 'javascript',
+        'js': 'javascript',
+        'py': 'python',
+        'python3': 'python',
+        'gcc': 'c',
+        'g++': 'c++',
+      };
+      
+      // Find appropriate runtime for each language
+      const options = [];
+      
+      filteredLanguages.forEach(lang => {
+        // Try to find the exact version we know works
+        const exactMatch = data.find(runtime => 
+          (runtime.language === lang || 
+           (runtime.aliases && runtime.aliases.includes(lang)) || 
+           (aliasToLanguage[runtime.language] === lang)) && 
+          runtime.version === knownWorkingVersions[lang]
+        );
+        
+        if (exactMatch) {
+          options.push({
+            label: `${lang} (${exactMatch.version})`,
+            value: lang === "c++" ? "cpp" : lang,
+            version: exactMatch.version,
+            runtime: exactMatch.runtime || exactMatch.language
+          });
+          return;
         }
-        else {
-          toast.error(data.msg);
+        
+        // If exact version not found, find any version
+        const anyVersion = data.find(runtime => 
+          runtime.language === lang || 
+          (runtime.aliases && runtime.aliases.includes(lang)) ||
+          (aliasToLanguage[runtime.language] === lang)
+        );
+        
+        if (anyVersion) {
+          options.push({
+            label: `${lang} (${anyVersion.version})`,
+            value: lang === "c++" ? "cpp" : lang,
+            version: anyVersion.version,
+            runtime: anyVersion.runtime || anyVersion.language
+          });
+          return;
+        }
+        
+        // Fallback to known working version if API doesn't return it
+        if (knownWorkingVersions[lang]) {
+          options.push({
+            label: `${lang} (${knownWorkingVersions[lang]} - recommended)`,
+            value: lang === "c++" ? "cpp" : lang,
+            version: knownWorkingVersions[lang],
+            runtime: lang === "javascript" ? "node" : lang
+          });
         }
       });
+      
+      console.log("Created language options:", options);
+      setLanguageOptions(options);
+    } catch (error) {
+      console.error("Error fetching runtimes:", error);
+      toast.error("Could not load language options. Using defaults.");
+      
+      // Fallback options if API fails
+      const fallbackOptions = [
+        { label: "JavaScript (18.15.0)", value: "javascript", version: "18.15.0", runtime: "node" },
+        { label: "Python (3.10.0)", value: "python", version: "3.10.0" },
+        { label: "C++ (10.2.0)", value: "cpp", version: "10.2.0" },
+        { label: "C (10.2.0)", value: "c", version: "10.2.0" },
+        { label: "Java (15.0.2)", value: "java", version: "15.0.2" },
+        { label: "Bash (5.2.0)", value: "bash", version: "5.2.0" }
+      ];
+      
+      setLanguageOptions(fallbackOptions);
     }
   };
 
-  const [editProjId, setEditProjId] = useState("");
+  const getProjects = async () => {
+    fetch(api_base_url + "/getProjects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: localStorage.getItem("token") }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setProjects(data.projects);
+        else toast.error(data.msg);
+      });
+  };
+
+  const createProj = () => {
+    if (!selectedLanguage) {
+      toast.error("Please select a programming language");
+      return;
+    }
+    
+    console.log("Creating project with language:", selectedLanguage);
+    
+    fetch(api_base_url + "/createProj", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        projLanguage: selectedLanguage.value,
+        token: localStorage.getItem("token"),
+        version: selectedLanguage.version,
+        runtime: selectedLanguage.runtime || selectedLanguage.value,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setName("");
+          navigate("/editor/" + data.projectId);
+        } else toast.error(data.msg);
+      });
+  };
+
+  const deleteProject = (id) => {
+    if (confirm("Are you sure you want to delete this project?")) {
+      fetch(api_base_url + "/deleteProject", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: id,
+          token: localStorage.getItem("token"),
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) getProjects();
+          else toast.error(data.msg);
+        });
+    }
+  };
 
   const updateProj = () => {
     fetch(api_base_url + "/editProject", {
-      mode: "cors",
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         projectId: editProjId,
         token: localStorage.getItem("token"),
-        name: name,
-      })
-    }).then(res => res.json()).then(data => {
-      if (data.success) {
-        setIsEditModelShow(false);
-        setName("");
-        setEditProjId("");
-        getProjects();
-      }
-      else {
-        toast.error(data.msg);
-        setIsEditModelShow(false);
-        setName("");
-        setEditProjId("");
-        getProjects();
-      }
+        name,
+      }),
     })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setIsEditModelShow(false);
+          setName("");
+          setEditProjId("");
+          getProjects();
+        } else {
+          toast.error(data.msg);
+        }
+      });
   };
 
   return (
     <>
-      <Navbar />
-      <div className="flex items-center px-[100px] justify-between mt-5">
-        <h3 className='text-2xl'>Coding master</h3>
-        <div className="flex items-center">
-          <button onClick={() => { setIsCreateModelShow(true) }} className="btnNormal bg-blue-500 transition-all hover:bg-blue-600">Create Project</button>
+      <Navbar theme={theme} setTheme={setTheme} />
+      <div className="absolute inset-0 -z-10">
+        <BackgroundBeamsWithCollision />
+      </div>
+
+      <div className="relative container mx-auto px-8 py-10">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-3xl font-semibold text-gray-900 dark:text-white">Hey! Dev, Let's Code</h3>
+          <button
+            onClick={() => setIsCreateModelShow(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg"
+          >
+            Create Project
+          </button>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+        >
+          {projects?.length > 0 ? (
+            projects.map((project) => (
+              <motion.div
+                key={project._id}
+                whileHover={{ scale: 1.05 }}
+                className="bg-white/10 dark:bg-gray-700/20 backdrop-blur-md p-4 rounded-xl shadow-md flex flex-col gap-3"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{project.name}</h3>
+                <p className="text-gray-600 dark:text-gray-300">{new Date(project.date).toDateString()}</p>
+                <div className="flex justify-between">
+                  <button
+                    onClick={() => navigate("/editor/" + project._id)}
+                    className="text-blue-500 dark:text-blue-300"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditModelShow(true);
+                      setEditProjId(project._id);
+                      setName(project.name);
+                    }}
+                    className="text-yellow-500 dark:text-yellow-300"
+                  >
+                    Rename
+                  </button>
+                  <button
+                    onClick={() => deleteProject(project._id)}
+                    className="text-red-500 dark:text-red-300"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <p className="text-gray-600 dark:text-gray-300">No Projects Found</p>
+          )}
+        </motion.div>
       </div>
 
-      <div className="projects px-[100px] mt-5 pb-10">
-
-        {
-          projects && projects.length > 0 ? projects.map((project, index) => {
-            return <>
-              <div className="project w-full p-[15px] flex items-center justify-between bg-[#0f0e0e]">
-                <div onClick={() => { navigate("/editior/" + project._id) }} className='flex w-full items-center gap-[15px]'>
-                  {
-                    project.projLanguage === "python" ?
-                      <>
-                        <img className='w-[130px] h-[100px] object-cover' src="https://images.ctfassets.net/em6l9zw4tzag/oVfiswjNH7DuCb7qGEBPK/b391db3a1d0d3290b96ce7f6aacb32b0/python.png" alt="" />
-                      </>
-                      : project.projLanguage === "javascript" ?
-                        <>
-                          <img className='w-[130px] h-[100px] object-cover' src="https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png" alt="" />
-                        </> : project.projLanguage === "cpp" ?
-                          <>
-                            <img className='w-[130px] h-[100px] object-cover' src="https://upload.wikimedia.org/wikipedia/commons/3/32/C%2B%2B_logo.png" alt="" />
-                          </> : project.projLanguage === "c" ?
-                            <>
-                              <img className='w-[130px] h-[100px] object-cover' src="https://upload.wikimedia.org/wikipedia/commons/1/19/C_Logo.png" alt="" />
-                            </> : project.projLanguage === "java" ?
-                              <>
-                                <img className='w-[130px] h-[100px] object-cover' src="https://static-00.iconduck.com/assets.00/java-icon-1511x2048-6ikx8301.png" alt="" />
-                              </> : project.projLanguage === "bash" ?
-                                <>
-                                  <img className='w-[130px] h-[100px] object-cover' src="https://w7.pngwing.com/pngs/48/567/png-transparent-bash-shell-script-command-line-interface-z-shell-shell-rectangle-logo-commandline-interface-thumbnail.png" alt="" />
-                                </> : ""
-                  }
-                  <div>
-                    <h3 className='text-xl'>{project.name}</h3>
-                    <p className='text-[14px] text-[gray]'>{new Date(project.date).toDateString()}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-[15px]">
-                  <button className="btnNormal bg-blue-500 transition-all hover:bg-blue-600" onClick={() => {
-                    setIsEditModelShow(true);
-                    setEditProjId(project._id);
-                    setName(project.name);
-                  }}>Edit</button>
-                  <button onClick={() => { deleteProject(project._id) }} className="btnNormal bg-red-500 transition-all hover:bg-red-600">Delete</button>
-                </div>
-              </div>
-            </>
-          }) : "No Project Found !"
-        }
-      </div>
-
-      {
-        isCreateModelShow &&
-        <div onClick={(e) => {
-          if (e.target.classList.contains("modelCon")) {
-            setIsCreateModelShow(false);
-            setName("");
-          }
-        }} className='modelCon flex flex-col items-center justify-center w-screen h-screen fixed top-0 left-0 bg-[rgba(0,0,0,0.5)]'>
-          <div className="modelBox flex flex-col items-start rounded-xl p-[20px] w-[25vw] h-[auto] bg-[#0F0E0E]">
-            <h3 className='text-xl font-bold text-center'>Create Project</h3>
-            <div className="inputBox">
-              <input onChange={(e) => { setName(e.target.value) }} value={name} type="text" placeholder='Enter your project name' className="text-black" />
-            </div>
+      {isCreateModelShow && (
+        <div
+          onClick={(e) => {
+            if (e.target.classList.contains("modelCon")) {
+              setIsCreateModelShow(false);
+              setName("");
+            }
+          }}
+          className='modelCon flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-[rgba(0,0,0,0.5)] z-50'
+        >
+          <div className="modelBox bg-[#0F0E0E] p-6 rounded-lg w-[90%] sm:w-[400px]">
+            <h3 className='text-xl font-bold mb-4 text-white'>Create Project</h3>
+            <input
+              onChange={(e) => setName(e.target.value)}
+              value={name}
+              type="text"
+              placeholder='Enter project name'
+              className="w-full p-2 rounded text-black mb-4"
+            />
             <Select
               placeholder="Select a Language"
               options={languageOptions}
               styles={customStyles}
-              onChange={handleLanguageChange} // Handle language selection
+              onChange={(option) => setSelectedLanguage(option)}
             />
             {selectedLanguage && (
               <>
-                <p className="text-[14px] text-green-500 mt-2">
-                  Selected Language: {selectedLanguage.label}
-                </p>
-                <button onClick={createProj} className="btnNormal bg-blue-500 transition-all hover:bg-blue-600 mt-2">Create</button>
+                <p className="text-sm text-green-500 mt-2">Selected Language: {selectedLanguage.label}</p>
+                <button
+                  onClick={createProj}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mt-4 rounded"
+                >
+                  Create
+                </button>
               </>
             )}
           </div>
         </div>
-      }
+      )}
 
-      {
-        isEditModelShow &&
-        <div onClick={(e) => {
-          if (e.target.classList.contains("modelCon")) {
-            setIsEditModelShow(false);
-            setName("");
-          }
-        }} className='modelCon flex flex-col items-center justify-center w-screen h-screen fixed top-0 left-0 bg-[rgba(0,0,0,0.5)]'>
-          <div className="modelBox flex flex-col items-start rounded-xl p-[20px] w-[25vw] h-[auto] bg-[#0F0E0E]">
-            <h3 className='text-xl font-bold text-center'>Update Project</h3>
-            <div className="inputBox">
-              <input onChange={(e) => { setName(e.target.value) }} value={name} type="text" placeholder='Enter your project name' className="text-black" />
-            </div>
-
-            <button onClick={updateProj} className="btnNormal bg-blue-500 transition-all hover:bg-blue-600 mt-2">Update</button>
-
+      {isEditModelShow && (
+        <div
+          onClick={(e) => {
+            if (e.target.classList.contains("modelCon")) {
+              setIsEditModelShow(false);
+              setName("");
+            }
+          }}
+          className='modelCon flex items-center justify-center fixed top-0 left-0 w-screen h-screen bg-[rgba(0,0,0,0.5)] z-50'
+        >
+          <div className="modelBox bg-[#0F0E0E] p-6 rounded-lg w-[90%] sm:w-[400px]">
+            <h3 className='text-xl font-bold mb-4 text-white'>Update Project Name</h3>
+            <input
+              onChange={(e) => setName(e.target.value)}
+              value={name}
+              type="text"
+              placeholder='Enter new project name'
+              className="w-full p-2 rounded text-black mb-4"
+            />
+            <button
+              onClick={updateProj}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Update
+            </button>
           </div>
         </div>
-      }
+      )}
     </>
   );
 };

@@ -25,6 +25,23 @@ let projectSchema = new mongoose.Schema({
   version: {
     type: String,
     required: true,
+  },
+  runtime: {
+    type: String,
+    required: false,
+    default: function() {
+      // Default runtime based on language if not provided
+      const langToRuntime = {
+        'javascript': 'node',
+        'python': 'python',
+        'cpp': 'gcc',
+        'c': 'gcc',
+        'java': 'java',
+        'bash': 'bash',
+        'go': 'go'
+      };
+      return langToRuntime[this.projLanguage] || this.projLanguage;
+    }
   }
 });
 
