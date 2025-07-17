@@ -4,6 +4,7 @@ import Editor2 from '@monaco-editor/react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api_base_url } from '../helper';
 import { toast } from 'react-toastify';
+import Select from 'react-select';
 
 const Editor = () => {
   const [code, setCode] = useState(""); // State to hold the code
@@ -15,6 +16,9 @@ const Editor = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [useBackupAPI, setUseBackupAPI] = useState(false);
+  const [languageOptions, setLanguageOptions] = useState([]);
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const [isUpdatingLang, setIsUpdatingLang] = useState(false);
   const navigate = useNavigate();
 
   // Fetch project data on mount
@@ -373,10 +377,83 @@ const Editor = () => {
     }
   };
 
+  // Update project language
+  const updateLanguage = (option) => {
+    if (!option || !data) return;
+    
+    setIsUpdatingLang(true);
+    setSelectedLanguage(option);
+    
+    fetch(`${api_base_url}/updateLanguage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId: id,
+        token: localStorage.getItem("token"),
+        projLanguage: option.value,
+        version: option.version,
+        runtime: option.runtime || option.value,
+      }),
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        if (response.success) {
+          setData({
+            ...data,
+            projLanguage: option.value,
+            version: option.version,
+            runtime: option.runtime || option.value
+          });
+          
+          // Update code with proper template for the selected language
+          setCode(response.defaultCode || '');
+          toast.success('Programming language updated');
+        } else {
+          toast.error(response.msg || 'Failed to update language');
+        }
+      })
+      .catch((err) => {
+        console.error('Error updating language:', err);
+        toast.error('Failed to update language');
+      })
+      .finally(() => {
+        setIsUpdatingLang(false);
+      });
+  };
+
+  // Get language options
+  const getLanguageOptions = () => {
+    const options = [
+      { label: "JavaScript (18.15.0)", value: "javascript", version: "18.15.0", runtime: "node" },
+      { label: "Python (3.10.0)", value: "python", version: "3.10.0" },
+      { label: "C++ (10.2.0)", value: "cpp", version: "10.2.0" },
+      { label: "C (10.2.0)", value: "c", version: "10.2.0" },
+      { label: "Java (15.0.2)", value: "java", version: "15.0.2" },
+      { label: "Bash (5.2.0)", value: "bash", version: "5.2.0" },
+    ];
+    
+    setLanguageOptions(options);
+    
+    // Set selected language based on project data
+    if (data && data.projLanguage !== 'placeholder') {
+      const currentLang = options.find(opt => opt.value === data.projLanguage);
+      if (currentLang) {
+        setSelectedLanguage(currentLang);
+      }
+    }
+  };
+
+  // Load language options when component mounts or data changes
+  useEffect(() => {
+    if (data) {
+      getLanguageOptions();
+    }
+  }, [data]);
+
   if (isLoading) {
     return (
       <>
-        <Navbar />
+        <Navbar showLanguageSelector={false} />
         <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 90px)' }}>
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
@@ -389,7 +466,15 @@ const Editor = () => {
 
   return (
     <>
-      <Navbar />
+      <Navbar 
+        showLanguageSelector={true}
+        isPlaceholder={data?.projLanguage === 'placeholder'}
+        languageOptions={languageOptions}
+        selectedLanguage={selectedLanguage}
+        updateLanguage={updateLanguage}
+        isUpdatingLang={isUpdatingLang}
+      />
+      
       <div className="flex items-center justify-between" style={{ height: 'calc(100vh - 90px)' }}>
         <div className="left w-[50%] h-full">
           <div className="h-[40px] bg-[#1e1e1e] flex items-center justify-between px-4">

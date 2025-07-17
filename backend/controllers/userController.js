@@ -9,6 +9,9 @@ const secret = process.env.JWT_SECRET;
 
 function getStartupCode(language) {
   switch(language.toLowerCase()) {
+    case "placeholder":
+      return '// Please select a programming language from the dropdown above';
+      
     case "python":
       return 'print("Hello World")';
     
@@ -452,6 +455,54 @@ exports.executeCode = async (req, res) => {
       success: false,
       msg: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+// Update project language
+exports.updateLanguage = async (req, res) => {
+  try {
+    let { token, projectId, projLanguage, version, runtime } = req.body;
+    
+    let decoded = jwt.verify(token, secret);
+    let user = await userModel.findOne({ _id: decoded.userId });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        msg: "User not found"
+      });
+    }
+
+    let project = await projectModel.findOne({ _id: projectId });
+    
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        msg: "Project not found"
+      });
+    }
+    
+    // Update project language and related fields
+    project.projLanguage = projLanguage;
+    project.version = version || project.version;
+    if (runtime) project.runtime = runtime;
+    
+    // Generate default code for this language
+    const defaultCode = getStartupCode(projLanguage);
+    
+    await project.save();
+    
+    return res.status(200).json({
+      success: true,
+      msg: "Language updated successfully",
+      defaultCode
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      msg: error.message
     });
   }
 };

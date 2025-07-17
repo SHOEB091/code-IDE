@@ -168,22 +168,19 @@ const Home = () => {
   };
 
   const createProj = () => {
-    if (!selectedLanguage) {
-      toast.error("Please select a programming language");
+    if (!name.trim()) {
+      toast.error("Please enter a project name");
       return;
     }
     
-    console.log("Creating project with language:", selectedLanguage);
-    
+    // Create project with temporary placeholder language, will be updated in editor
     fetch(api_base_url + "/createProj", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
-        projLanguage: selectedLanguage.value,
+        projLanguage: "placeholder", // This will be updated in the editor
         token: localStorage.getItem("token"),
-        version: selectedLanguage.version,
-        runtime: selectedLanguage.runtime || selectedLanguage.value,
       }),
     })
       .then((res) => res.json())
@@ -320,23 +317,12 @@ const Home = () => {
               placeholder='Enter project name'
               className="w-full p-2 rounded text-black mb-4"
             />
-            <Select
-              placeholder="Select a Language"
-              options={languageOptions}
-              styles={customStyles}
-              onChange={(option) => setSelectedLanguage(option)}
-            />
-            {selectedLanguage && (
-              <>
-                <p className="text-sm text-green-500 mt-2">Selected Language: {selectedLanguage.label}</p>
-                <button
-                  onClick={createProj}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mt-4 rounded"
-                >
-                  Create
-                </button>
-              </>
-            )}
+            <button
+              onClick={createProj}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 mt-2 rounded w-full"
+            >
+              Create
+            </button>
           </div>
         </div>
       )}

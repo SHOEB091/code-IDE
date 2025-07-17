@@ -2,8 +2,16 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
 import logo from "../images/logos/logo.png";
+import Select from "react-select";
 
-const Navbar = () => {
+const Navbar = ({ 
+  languageOptions, 
+  selectedLanguage, 
+  updateLanguage, 
+  isUpdatingLang, 
+  showLanguageSelector = false,
+  isPlaceholder = false
+}) => {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
   const location = useLocation();
   const isLoggedIn = localStorage.getItem("isLoggedIn");
@@ -88,8 +96,87 @@ const Navbar = () => {
       </Link>
       
       {/* Navigation Links - Centered */}
-      <div className="flex-1 flex justify-center gap-6">
-        {getNavLinks()}
+      <div className="flex-1 flex justify-center gap-6 items-center">
+        {showLanguageSelector ? (
+          isPlaceholder ? (
+            <div className="w-[300px] mx-auto">
+              <div className="flex flex-col items-center">
+                <h3 className="text-black dark:text-white text-center text-sm mb-1 font-medium">Select Programming Language</h3>
+                <Select
+                  placeholder="Choose language..."
+                  options={languageOptions}
+                  value={selectedLanguage}
+                  onChange={updateLanguage}
+                  isDisabled={isUpdatingLang}
+                  className="w-full"
+                  styles={{
+                    control: (provided) => ({
+                      ...provided,
+                      backgroundColor: darkMode ? '#333' : '#f0f0f0',
+                      borderColor: darkMode ? '#555' : '#ccc',
+                      color: darkMode ? '#fff' : '#000',
+                    }),
+                    menu: (provided) => ({
+                      ...provided,
+                      backgroundColor: darkMode ? '#222' : '#fff',
+                    }),
+                    option: (provided, state) => ({
+                      ...provided,
+                      backgroundColor: state.isFocused 
+                        ? (darkMode ? '#444' : '#f0f0f0') 
+                        : (darkMode ? '#222' : '#fff'),
+                      color: darkMode ? '#fff' : '#000',
+                    }),
+                    singleValue: (provided) => ({
+                      ...provided,
+                      color: darkMode ? '#fff' : '#000',
+                    }),
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>Language:</span>
+              <Select
+                value={selectedLanguage}
+                onChange={updateLanguage}
+                options={languageOptions}
+                isDisabled={isUpdatingLang}
+                className="w-[200px]"
+                styles={{
+                  control: (provided) => ({
+                    ...provided,
+                    backgroundColor: darkMode ? '#333' : '#f0f0f0',
+                    borderColor: darkMode ? '#555' : '#ccc',
+                    minHeight: '35px',
+                  }),
+                  valueContainer: (provided) => ({
+                    ...provided,
+                    padding: '0 8px',
+                  }),
+                  menu: (provided) => ({
+                    ...provided,
+                    backgroundColor: darkMode ? '#222' : '#fff',
+                  }),
+                  option: (provided, state) => ({
+                    ...provided,
+                    backgroundColor: state.isFocused 
+                      ? (darkMode ? '#444' : '#f0f0f0') 
+                      : (darkMode ? '#222' : '#fff'),
+                    color: darkMode ? '#fff' : '#000',
+                  }),
+                  singleValue: (provided) => ({
+                    ...provided,
+                    color: darkMode ? '#fff' : '#000',
+                  }),
+                }}
+              />
+            </div>
+          )
+        ) : (
+          getNavLinks()
+        )}
       </div>
 
       {/* Logout & Dark Mode - Aligned to Right */}
