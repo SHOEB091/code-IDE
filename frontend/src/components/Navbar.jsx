@@ -109,6 +109,7 @@ const Navbar = ({
                   onChange={updateLanguage}
                   isDisabled={isUpdatingLang}
                   className="w-full"
+                  menuPortalTarget={document.body}
                   styles={{
                     control: (provided) => ({
                       ...provided,
@@ -119,6 +120,11 @@ const Navbar = ({
                     menu: (provided) => ({
                       ...provided,
                       backgroundColor: darkMode ? '#222' : '#fff',
+                      zIndex: 9999, // Ensure menu is on top of other elements
+                    }),
+                    menuPortal: (provided) => ({
+                      ...provided,
+                      zIndex: 9999,
                     }),
                     option: (provided, state) => ({
                       ...provided,
@@ -144,6 +150,7 @@ const Navbar = ({
                 options={languageOptions}
                 isDisabled={isUpdatingLang}
                 className="w-[200px]"
+                menuPortalTarget={document.body}
                 styles={{
                   control: (provided) => ({
                     ...provided,
@@ -158,6 +165,11 @@ const Navbar = ({
                   menu: (provided) => ({
                     ...provided,
                     backgroundColor: darkMode ? '#222' : '#fff',
+                    zIndex: 9999, // Ensure menu is on top of other elements
+                  }),
+                  menuPortal: (provided) => ({
+                    ...provided,
+                    zIndex: 9999,
                   }),
                   option: (provided, state) => ({
                     ...provided,
