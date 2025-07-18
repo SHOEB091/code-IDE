@@ -26,7 +26,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // CORS configuration with allowed origins
 const allowedOrigins = [
   'http://localhost:5173',  // Local frontend development
-  'https://your-vercel-app-name.vercel.app', // Your Vercel deployment (update this)
+  'https://your-netlify-app-name.netlify.app', // Your Netlify deployment (update this)
+  'https://your-render-app-name.onrender.com' // In case you deploy frontend on Render
 ];
 
 app.use(cors({
