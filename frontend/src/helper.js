@@ -1,7 +1,8 @@
 // API configuration
-export const api_base_url = "http://localhost:3000";
+// API URL configuration
+export const api_base_url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// Helper function to make authenticated API calls
+// Add other helper functions below
 export const fetchWithAuth = async (endpoint, method = 'GET', body = null) => {
   const token = localStorage.getItem('token');
   

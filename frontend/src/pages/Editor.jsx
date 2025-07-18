@@ -138,6 +138,21 @@ const Editor = () => {
     };
     return extensions[language?.toLowerCase()] || '';
   };
+  
+  // Function to download the current file
+  const downloadProject = () => {
+    const fileName = `${data?.name || 'code'}${getFileExtension(data?.projLanguage)}`;
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('File downloaded');
+  };
 
   // Get appropriate language name for APIs
   const getAPILanguageName = (language) => {
@@ -481,17 +496,25 @@ const Editor = () => {
             <span className="text-white text-sm">
               {data?.name}{getFileExtension(data?.projLanguage)}
             </span>
-            <button
-              onClick={saveProject}
-              disabled={isSaving}
-              className={`px-2 py-1 rounded text-xs ${
-                isSaving 
-                  ? 'bg-gray-500 cursor-not-allowed' 
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              {isSaving ? 'Saving...' : 'Save'}
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={saveProject}
+                disabled={isSaving}
+                className={`px-2 py-1 rounded text-xs ${
+                  isSaving 
+                    ? 'bg-gray-500 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={downloadProject}
+                className="px-2 py-1 rounded text-xs bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Download
+              </button>
+            </div>
           </div>
           <Editor2
             onChange={(newCode) => setCode(newCode || '')}
