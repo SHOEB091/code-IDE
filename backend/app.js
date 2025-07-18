@@ -24,11 +24,14 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // CORS configuration with allowed origins
-const allowedOrigins = [
-  'http://localhost:5173',  // Local frontend development
-  'https://your-netlify-app-name.netlify.app', // Your Netlify deployment (update this)
-  'https://your-render-app-name.onrender.com' // In case you deploy frontend on Render
-];
+// Read from environment or use default values
+const allowedOrigins = process.env.CORS_ORIGINS ? 
+  process.env.CORS_ORIGINS.split(',') : 
+  [
+    'http://localhost:5173',  // Local frontend development
+    'https://soide.netlify.app', // Your Netlify deployment
+    'https://your-render-app-name.onrender.com' // In case you deploy frontend on Render
+  ];
 
 app.use(cors({
   origin: function(origin, callback) {
@@ -37,10 +40,14 @@ app.use(cors({
     
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'The CORS policy does not allow access from the specified Origin.';
+      console.log(`CORS blocked origin: ${origin}, allowed origins: ${allowedOrigins.join(', ')}`);
       return callback(new Error(msg), false);
     }
+    console.log(`CORS allowed origin: ${origin}`);
     return callback(null, true);
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
