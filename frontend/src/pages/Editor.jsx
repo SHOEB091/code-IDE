@@ -445,6 +445,7 @@ const Editor = () => {
       { label: "C (10.2.0)", value: "c", version: "10.2.0" },
       { label: "Java (15.0.2)", value: "java", version: "15.0.2" },
       { label: "Bash (5.2.0)", value: "bash", version: "5.2.0" },
+      { label: "Go (1.16.2)", value: "go", version: "1.16.2", runtime: "go" },
     ];
     
     setLanguageOptions(options);

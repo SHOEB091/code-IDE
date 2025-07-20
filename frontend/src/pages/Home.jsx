@@ -63,6 +63,7 @@ const Home = () => {
         'c': '10.2.0',
         'java': '15.0.2',
         'bash': '5.2.0',
+        'go': '1.16.2',
       };
       
       // Fetch all available runtimes
@@ -71,7 +72,7 @@ const Home = () => {
       console.log("Available runtimes:", data);
       
       // Filter languages we support
-      const filteredLanguages = ["python", "javascript", "c", "c++", "java", "bash"];
+      const filteredLanguages = ["python", "javascript", "c", "c++", "java", "bash", "go"];
       
       // Map aliases to their proper language names for filtering
       const aliasToLanguage = {
@@ -82,6 +83,7 @@ const Home = () => {
         'python3': 'python',
         'gcc': 'c',
         'g++': 'c++',
+        'golang': 'go',
       };
       
       // Find appropriate runtime for each language
@@ -147,7 +149,8 @@ const Home = () => {
         { label: "C++ (10.2.0)", value: "cpp", version: "10.2.0" },
         { label: "C (10.2.0)", value: "c", version: "10.2.0" },
         { label: "Java (15.0.2)", value: "java", version: "15.0.2" },
-        { label: "Bash (5.2.0)", value: "bash", version: "5.2.0" }
+        { label: "Bash (5.2.0)", value: "bash", version: "5.2.0" },
+        { label: "Go (1.16.2)", value: "go", version: "1.16.2", runtime: "go" }
       ];
       
       setLanguageOptions(fallbackOptions);
